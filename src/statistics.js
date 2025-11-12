@@ -188,7 +188,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                     </td>
                     <td> <span class="limit-text">${usedCalls} / ${dailyLimit}</span></td>
                    <td class="${errorRatio < 10 ? 'error-low' : errorRatio < 30 ? 'error-medium' : 'error-high'}">
-                        ${errorRatio.toFixed(2)}%
+                        ${errorRatio.toFixed(2)}% ${errorCall} / ${usedCalls}
                     </td>
                 `;
             }
