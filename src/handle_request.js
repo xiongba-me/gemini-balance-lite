@@ -48,7 +48,7 @@ export async function handleRequest(request, env) {
         return new Response("Unauthorized", { status: 401 });
     }
 
-    // =====  配置的GENIMI_KEY  =====
+    // =====  配置的 GENIMI_KEY  =====
     let genimikeyStr = env.GENIMI_KEY;
 
     if(!genimikeyStr){
