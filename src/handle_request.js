@@ -49,9 +49,9 @@ export async function handleRequest(request, env) {
     }
 
     // =====  配置的GENIMI_KEY  =====
-    let GENIMI_KEY = env.GENIMI_KEY;
+    let genimikeyStr = env.GENIMI_KEY;
 
-    if(!GENIMI_KEY){
+    if(!genimikeyStr){
         return new Response("Missing GENIMI_KEY Config", { status: 401 });
     }
 
