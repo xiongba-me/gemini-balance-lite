@@ -64,7 +64,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     const totalStatsHtml = Object.entries(modelTotals).map(([model, count]) => {
         const totalLimit = (dailyCallLimits[model] || 0) * apiKeys.length;
         if (!totalLimit || totalLimit === Infinity) {
-            return `<div class="progress-cell" style="margin-bottom: 5px;">
+            return `<div class="progress-cell">
                         <strong style="flex-shrink: 0;">${model}:</strong>
                         <span>${count} / Unlimited</span>
                     </div>`;
@@ -83,14 +83,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         }
         return `
             <div class="progress-cell" style="margin-bottom: 5px;">
-                <strong style="flex-shrink: 0;">${model}:</strong>
-                <div class="progress-container">
-                    <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};">
-                        <span>${percentageUsed.toFixed(2)}%</span>
-                    </div>
-                </div>
-                <span class="limit-text">${count} / ${totalLimit}</span>
-            </div>`;
+                <strong style="flex-shrink: 0;">${model}:</strong> <div class="progress-container"><div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};"><span>${percentageUsed.toFixed(2)}%</span></div></div> <span class="limit-text">${count} / ${totalLimit}</span></div>`;
     }).join('');
 
     let html = `
@@ -102,9 +95,10 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     <title>Gemini Proxy Statistics</title>
     <style>
         body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
-        h1 { color: #444; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 0.5em;}
-        h1 span { font-size: 0.8em; margin-left: 1em; display: flex; align-items: center; flex-wrap: wrap;}
-        h1 span .progress-cell { margin-right: 1em; margin-bottom: 5px;}
+        h1 { color: #444; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.5em;}
+        h1 span { font-size: 1.2em;}
+        .header-stats { display: flex; align-items: center; flex-wrap: wrap;}
+        .header-stats .progress-cell { margin-left: 1em; }
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { padding: 6px 8px; border: 1px solid #ddd;  vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
@@ -130,7 +124,10 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     </style>
 </head>
 <body>
-    <h1>Gemini API Key Statistics (${today})<span>${totalStatsHtml}</span></h1>
+    <h1>
+        <span>Gemini API Key Statistics (${today})</span>
+        <div class="header-stats">${totalStatsHtml}</div>
+    </h1>
     <table>
         <thead>
             <tr>
