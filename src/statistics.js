@@ -106,13 +106,13 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         h1 span { font-size: 0.8em; margin-left: 1em; display: flex; align-items: center; flex-wrap: wrap;}
         h1 span .progress-cell { margin-right: 1em; margin-bottom: 5px;}
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 6px 8px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
+        th, td { padding: 6px 8px; border: 1px solid #ddd;  vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr:hover { background-color: #f1f1f1; }
         .banned-yes { color: red; font-weight: bold; }
         .progress-cell { display: flex; align-items: center; justify-content: space-between; }
-        .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 100px; }
+        .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 200px; }
         .progress-bar { height: 100%; border-radius: 4px; text-align: center; color: white; line-height: 20px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
         .limit-text { font-size: 0.9em; white-space: nowrap; }
         .error-low {
@@ -136,7 +136,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             <tr>
                 <th>API Key</th>
                 <th>Model</th>
-                <th colspan="2">Daily Usage</th>
+                <th colspan="2">Daily Usage (Call/Limit)</th>
                 <th>ERROR</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
