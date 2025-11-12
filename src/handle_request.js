@@ -25,7 +25,7 @@ export async function handleRequest(request, env) {
 
 
     if (pathname === '/statistics') {
-        return handleStatisticsRequest(env, rateLimits, dailyCallLimits);
+        return handleStatisticsRequest(env, proxyConfig);
     }
     // 从 header 中提取多个 API key
     const apiToken = request.headers.get("x-goog-api-key");
