@@ -37,7 +37,9 @@ export async function handleRequest(request, env) {
     }
     // === 配置的 accessKey ===
     let tokenString=env.GEMINI_ACCESS_TOKEN;
-
+    if(!tokenString){
+        return new Response("Missing Access Token Config", { status: 401 });
+    }
     const allowedTokens = new Set(
         tokenString.split(",").map(t => t.trim()).filter(Boolean)
     );
@@ -47,7 +49,13 @@ export async function handleRequest(request, env) {
     }
 
     // =====  配置的GENIMI_KEY  =====
-    let apiKeys = env.GENIMI_KEY.split(',').map(s => s.trim()).filter(Boolean);
+    let GENIMI_KEY = env.GENIMI_KEY;
+
+    if(!GENIMI_KEY){
+        return new Response("Missing GENIMI_KEY Config", { status: 401 });
+    }
+
+    let apiKeys= GENIMI_KEY.split(',').map(s => s.trim()).filter(Boolean);
 
     if (apiKeys.length === 0) {
         return new Response("Missing x-goog-api-key ", { status: 400 });
