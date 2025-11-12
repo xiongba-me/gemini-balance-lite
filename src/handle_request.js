@@ -1,5 +1,5 @@
 import { handleVerification } from './verify_keys.js';
-import { handleStatisticsRequest } from './statistics.js';
+import {handleStatisticsRequest} from "./statistics";
 
 const DEFAULT_RATE_LIMITS = {
     "gemini-2.5-pro": 60,
@@ -22,19 +22,21 @@ export async function handleRequest(request, env) {
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
+    // 根据路径判断从 URL 参数或 header 中提取 API key
+    let apiToken;
+    const pathsUsingUrlApiKey = ['/verify', '/statistics'];
 
-
-    if (pathname === '/statistics') {
-        return handleStatisticsRequest(env, proxyConfig);
+    if (pathsUsingUrlApiKey.includes(pathname)) {
+        apiToken = url.searchParams.get('token');
+    } else {
+        apiToken = request.headers.get("x-goog-api-key");
     }
-    // 从 header 中提取多个 API key
-    const apiToken = request.headers.get("x-goog-api-key");
 
     if (!apiToken) {
-        return new Response("Missing x-goog-api-key apiToken header", { status: 400 });
+        return new Response("Missing API key. ", { status: 400 });
     }
     // === 配置的 accessKey ===
-    let tokenString=env.GEMINI_ACCESS_TOKEN;
+    let tokenString = env.GEMINI_ACCESS_TOKEN;
     if(!tokenString){
         return new Response("Missing Access Token Config", { status: 401 });
     }
@@ -53,8 +55,11 @@ export async function handleRequest(request, env) {
         });
     }
 
-    if (pathname === '/verify' && request.method === 'POST') {
-        return handleVerification(request);
+    if (pathname === '/statistics') {
+        return handleVerification(env);
+    }
+    if (pathname === '/verify') {
+        return handleStatisticsRequest(env);
     }
     // 提取模型名
     const modelMatch = pathname.match(/models\/([^:]+)/);

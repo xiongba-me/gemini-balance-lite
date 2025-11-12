@@ -31,21 +31,23 @@ async function verifyKey(key, controller) {
   controller.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(result) + '\n\n'));
 }
 
-export async function handleVerification(request) {
+export async function handleVerification(env) {
   try {
-    const authHeader = request.headers.get('x-goog-api-key');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing x-goog-api-key header.' }), {
-        status: 400,
+    const GEMINI_KEYS = env.GEMINI_KEYS;
+    if (!GEMINI_KEYS) {
+      return new Response(JSON.stringify({ error: 'GEMINI_KEYS environment variable not set.' }), {
+        status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    const keys = authHeader.split(',').map(k => k.trim()).filter(Boolean);
+    const keys = GEMINI_KEYS.split(',').map(k => k.trim()).filter(Boolean);
 
     const stream = new ReadableStream({
       async start(controller) {
-        const verificationPromises = keys.map(key => verifyKey(key, controller));
-        await Promise.all(verificationPromises);
+        for (const key of keys) {
+          await verifyKey(key, controller);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
         controller.close();
       }
     });
