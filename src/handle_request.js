@@ -30,15 +30,27 @@ export async function handleRequest(request, env) {
     const limitSeconds = RATE_LIMITS[modelName] || 30;
 
     // 从 header 中提取多个 API key
-    let apiKeys = [];
-    for (const [key, value] of request.headers.entries()) {
-        if (key.toLowerCase() === 'x-goog-api-key') {
-            apiKeys = value.split(',').map(k => k.trim()).filter(k => k);
-        }
+    const apiToken = request.headers.get("x-goog-api-key");
+
+    if (!apiToken) {
+        return new Response("Missing x-goog-api-key apiToken header", { status: 400 });
+    }
+    // === 配置的 accessKey ===
+    let tokenString=env.GEMINI_ACCESS_TOKEN;
+
+    const allowedTokens = new Set(
+        tokenString.split(",").map(t => t.trim()).filter(Boolean)
+    );
+    //如果 access Key 不对==
+    if (!apiToken || !allowedTokens.has(apiToken)) {
+        return new Response("Unauthorized", { status: 401 });
     }
 
+    // =====  配置的GENIMI_KEY  =====
+    let apiKeys = env.GENIMI_KEY.split(',').map(s => s.trim()).filter(Boolean);
+
     if (apiKeys.length === 0) {
-        return new Response("Missing x-goog-api-key header", { status: 400 });
+        return new Response("Missing x-goog-api-key ", { status: 400 });
     }
 
     const kv = env.GEMINI_RATE_LIMIT;
