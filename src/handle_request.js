@@ -13,10 +13,20 @@ const DEFAULT_DAILY_CALL_LIMITS = {
 
 
 export async function handleRequest(request, env) {
+
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    const search = url.search;
+
     const proxyConfig = env.GEMINI_PROXY_CONFIG ? JSON.parse(env.GEMINI_PROXY_CONFIG) : { rateLimits: DEFAULT_RATE_LIMITS, dailyCallLimits: DEFAULT_DAILY_CALL_LIMITS };
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
+
+
+    if (pathname === '/statistics') {
+        return handleStatisticsRequest(env, rateLimits, dailyCallLimits);
+    }
     // 从 header 中提取多个 API key
     const apiToken = request.headers.get("x-goog-api-key");
 
@@ -35,11 +45,6 @@ export async function handleRequest(request, env) {
     if (!apiToken || !allowedTokens.has(apiToken)) {
         return new Response(`Unauthorized apiToken ${apiToken}`, { status: 401 });
     }
-
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    const search = url.search;
-
     // 健康检查
     if (pathname === '/' || pathname === '/index.html') {
         return new Response('Proxy is Running!', {
@@ -50,9 +55,6 @@ export async function handleRequest(request, env) {
 
     if (pathname === '/verify' && request.method === 'POST') {
         return handleVerification(request);
-    }
-    if (pathname === '/statistics') {
-        return handleStatisticsRequest(env, rateLimits, dailyCallLimits);
     }
     // 提取模型名
     const modelMatch = pathname.match(/models\/([^:]+)/);
