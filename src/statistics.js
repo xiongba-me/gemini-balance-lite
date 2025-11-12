@@ -134,7 +134,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 <th>API Key</th>
                 <th>Model</th>
                 <th colspan="2">Daily Usage (Call/Limit)</th>
-                <th>ERROR</th>
+                <th colspan="2">Error Info</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
@@ -188,8 +188,9 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                     </td>
                     <td> <span class="limit-text">${usedCalls} / ${dailyLimit}</span></td>
                    <td class="${errorRatio < 10 ? 'error-low' : errorRatio < 30 ? 'error-medium' : 'error-high'}">
-                        ${errorRatio.toFixed(2)}% ${errorCall} / ${usedCalls}
+                        ${errorRatio.toFixed(2)}%
                     </td>
+                    <td> <span class="limit-text"> ${errorCall} / ${usedCalls}</span></td>
                 `;
             }
 
