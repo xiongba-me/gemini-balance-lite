@@ -160,19 +160,19 @@ export async function handleRequest(request, env) {
             headers,
             body: request.body
         });
+        // 统计每日调用次数
+        const today = new Date().toISOString().split('T')[0]; // 格式 YYYY-MM-DD
+        const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
+        const currentCount = parseInt(await kv.get(statsKey)) || 0;
+        await kv.put(statsKey, String(currentCount + 1), { expirationTtl: 86400 }); // 24小时后过期
 
-        // 如果返回 429，则将该 key 封禁一小时
-        if (response.status === 429) {
-            const bannedKey = `banned:${modelName}:${selectedKey}`;
-            await kv.put(bannedKey, 'true', { expirationTtl: 3600 });
-        } else if (response.ok) {
-            // 统计每日调用次数
-            const today = new Date().toISOString().split('T')[0]; // 格式 YYYY-MM-DD
-            const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
-            const currentCount = parseInt(await kv.get(statsKey)) || 0;
-            await kv.put(statsKey, String(currentCount + 1), { expirationTtl: 86400 }); // 24小时后过期
-        }
-
+        if (!response.ok) {
+           console.error(`${modelName} 使用 Key: ${redactedKey} 请求异常: ${response.status},错误:${response.body}`);
+           if(response.status === 429) {
+                const bannedKey = `banned:${modelName}:${selectedKey}`;
+                await kv.put(bannedKey, 'true', { expirationTtl: 3600 });
+            }
+       }
         const responseHeaders = new Headers(response.headers);
         responseHeaders.delete('transfer-encoding');
         responseHeaders.delete('connection');
