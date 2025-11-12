@@ -113,6 +113,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 } else if (percentageUsed >= 50) {
                     progressBarColor = '#ffc107'; // yellow
                     textColor = '#333';
+                } else if (percentageUsed < 20) {
+                    textColor = '#333';
                 }
 
                 html += `
