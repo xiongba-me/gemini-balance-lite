@@ -151,8 +151,9 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 html += '<td>Unlimited</td>';
             } else {
                 const usedCalls = stat.count;
+                const errorCall = stat.errorCount;
                 const percentageUsed = Math.min(100, (usedCalls / dailyLimit) * 100);
-
+                const errorRatio=Math.min(100, (errorCall / usedCalls) * 100)
                 let progressBarColor = '#4CAF50'; // green
                 let textColor = '#333'; // Default dark text for green
                 if (percentageUsed >= 80) {
@@ -172,6 +173,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                                     <span>${percentageUsed.toFixed(2)}%</span>
                                 </div>
                             </div>
+                            <span class="limit-text">${errorRatio.toFixed(2)}%</span>
                             <span class="limit-text">${usedCalls} / ${dailyLimit}</span>
                         </div>
                     </td>
@@ -180,6 +182,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 
             html += `
                 <td class="${stat.banned === 'Yes' ? 'banned-yes' : ''}">${stat.banned}</td>
+                 
                 <td>${stat.lastUsed}</td>
             </tr>
 `;
