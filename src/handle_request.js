@@ -1,6 +1,6 @@
-import { handleVerification } from './verify_keys.js';
-import { handleStatisticsRequest } from './statistics.js';
-import { getLocalDate } from './date_utils.js';
+import {handleVerification} from './verify_keys.js';
+import {handleStatisticsRequest} from './statistics.js';
+import {getLocalDate} from './date_utils.js';
 
 const DEFAULT_RATE_LIMITS = {
     "gemini-2.5-pro": 60,
@@ -19,7 +19,10 @@ export async function handleRequest(request, env) {
     const pathname = url.pathname;
     const search = url.search;
 
-    const proxyConfig = env.GEMINI_PROXY_CONFIG ? JSON.parse(env.GEMINI_PROXY_CONFIG) : { rateLimits: DEFAULT_RATE_LIMITS, dailyCallLimits: DEFAULT_DAILY_CALL_LIMITS };
+    const proxyConfig = env.GEMINI_PROXY_CONFIG ? JSON.parse(env.GEMINI_PROXY_CONFIG) : {
+        rateLimits: DEFAULT_RATE_LIMITS,
+        dailyCallLimits: DEFAULT_DAILY_CALL_LIMITS
+    };
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
@@ -34,30 +37,30 @@ export async function handleRequest(request, env) {
     }
 
     if (!apiToken) {
-        return new Response("Missing API key. ", { status: 400 });
+        return new Response("Missing API key. ", {status: 400});
     }
     // === 配置的 accessKey ===
     let tokenString = env.GEMINI_ACCESS_TOKEN;
-    if(!tokenString){
-        return new Response("Missing Access Token Config", { status: 401 });
+    if (!tokenString) {
+        return new Response("Missing Access Token Config", {status: 401});
     }
     const allowedTokens = new Set(
         tokenString.split(",").map(t => t.trim()).filter(Boolean)
     );
     //如果 access Key 不对==
     if (!apiToken || !allowedTokens.has(apiToken)) {
-        return new Response(`Unauthorized apiToken ${apiToken}`, { status: 401 });
+        return new Response(`Unauthorized apiToken ${apiToken}`, {status: 401});
     }
     // 健康检查
     if (pathname === '/' || pathname === '/index.html') {
         return new Response('Proxy is Running!', {
             status: 200,
-            headers: { 'Content-Type': 'text/plain' }
+            headers: {'Content-Type': 'text/plain'}
         });
     }
 
     if (pathname === '/statistics') {
-        return handleStatisticsRequest(env,proxyConfig);
+        return handleStatisticsRequest(env, proxyConfig);
     }
     if (pathname === '/verify') {
         return handleVerification(env);
@@ -71,19 +74,19 @@ export async function handleRequest(request, env) {
     // =====  配置的 GENIMI_KEY  =====
     let genimikeyStr = env.GEMINI_KEYS;
 
-    if(!genimikeyStr){
-        return new Response("Missing GENIMI_KEY Config", { status: 401 });
+    if (!genimikeyStr) {
+        return new Response("Missing GENIMI_KEY Config", {status: 401});
     }
 
-    let apiKeys= genimikeyStr.split(',').map(s => s.trim()).filter(Boolean);
+    let apiKeys = genimikeyStr.split(',').map(s => s.trim()).filter(Boolean);
 
     if (apiKeys.length === 0) {
-        return new Response("Missing x-goog-api-key ", { status: 400 });
+        return new Response("Missing x-goog-api-key ", {status: 400});
     }
 
     const kv = env.GEMINI_RATE_LIMIT;
     if (!kv) {
-        return new Response("KV not bound!", { status: 500 });
+        return new Response("KV not bound!", {status: 500});
     }
 
     // 从 KV 获取上次使用的索引，实现轮询
@@ -131,13 +134,13 @@ export async function handleRequest(request, env) {
     if (!selectedKey) {
         return new Response(
             `All keys for ${modelName} are rate-limited. Try again later.`,
-            { status: 429, headers: { "Content-Type": "text/plain" } }
+            {status: 429, headers: {"Content-Type": "text/plain"}}
         );
     }
 
     // 记录本次使用时间
-    await kv.put(`${modelName}:${selectedKey}`, String(now), { expiration_ttl: 3600 });
-    await kv.put(rrKey, String(selectedIndex), { expiration_ttl: 86400 });
+    await kv.put(`${modelName}:${selectedKey}`, String(now), {expiration_ttl: 3600});
+    await kv.put(rrKey, String(selectedIndex), {expiration_ttl: 86400});
 
     const redactedKey = `${selectedKey.substring(0, 4)}****${selectedKey.substring(selectedKey.length - 4)}`;
     console.log(`${modelName} 使用 Key: ${redactedKey}`);
@@ -165,15 +168,29 @@ export async function handleRequest(request, env) {
         const today = getLocalDate(); // 格式 YYYY-MM-DD
         const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
         const currentCount = parseInt(await kv.get(statsKey)) || 0;
-        await kv.put(statsKey, String(currentCount + 1), { expirationTtl: 86400 }); // 24小时后过期
+        await kv.put(statsKey, String(currentCount + 1), {expirationTtl: 86400}); // 24小时后过期
 
         if (!response.ok) {
-           console.error(`${modelName} 使用 Key: ${redactedKey} 请求异常: ${response.status},错误:${response.body}`);
-           if(response.status === 429) {
+            const clonedResponse = response.clone();
+            clonedResponse.json()
+                .then(json => {
+                    console.error(`${modelName} 使用Key: ${redactedKey} 请求异常: ${clonedResponse.status}, 错误: ${JSON.stringify(json)}`);
+                })
+                .catch(() => {
+                    clonedResponse.text()
+                        .then(text => {
+                            console.error(`${modelName} 使用Key: ${redactedKey} 请求异常: ${clonedResponse.status}, 错误: ${text}`);
+                        });
+                });
+            if (response.status === 429) {
                 const bannedKey = `banned:${modelName}:${selectedKey}`;
-                await kv.put(bannedKey, 'true', { expirationTtl: 3600 });
+                await kv.put(bannedKey, 'true', {expirationTtl: 3600});
             }
-       }
+            // 统计每日调用次数
+            const statsKey = `error:${modelName}:${selectedKey}:${today}`;
+            const errorCount = parseInt(await kv.get(statsKey)) || 0;
+            await kv.put(statsKey, String(errorCount + 1), {expirationTtl: 86400}); // 24小时后过期
+        }
         const responseHeaders = new Headers(response.headers);
         responseHeaders.delete('transfer-encoding');
         responseHeaders.delete('connection');
@@ -190,7 +207,7 @@ export async function handleRequest(request, env) {
         console.error('Gemini Proxy Error:', err);
         return new Response('Internal Server Error\n' + err.stack, {
             status: 500,
-            headers: { 'Content-Type': 'text/plain' }
+            headers: {'Content-Type': 'text/plain'}
         });
     }
 }

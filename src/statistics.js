@@ -20,13 +20,15 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         models.map(async model => {
             const redactedKey = `${key.substring(0, 4)}****${key.substring(key.length - 4)}`;
             const statsKey = `stats:${model}:${key}:${today}`;
+            const errorKey = `error:${model}:${key}:${today}`;
             const bannedKey = `banned:${model}:${key}`;
             const lastUsedKey = `${model}:${key}`;
 
-            const [count, isBanned, lastUsedTimestamp] = await Promise.all([
+            const [count, isBanned, lastUsedTimestamp, errorCount] = await Promise.all([
                 kv.get(statsKey),
                 kv.get(bannedKey),
-                kv.get(lastUsedKey)
+                kv.get(lastUsedKey),
+                kv.get(errorKey)
             ]);
 
             return {
@@ -35,6 +37,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 count: parseInt(count) || 0,
                 banned: isBanned ? 'Yes' : 'No',
                 lastUsed: lastUsedTimestamp ? new Date(parseInt(lastUsedTimestamp)).toLocaleString('zh-CN', { timeZone: 'America/Los_Angeles' }) : 'Never',
+                errorCount: parseInt(errorCount) || 0,
+                errorRate: (parseInt(count) > 0) ? ((parseInt(errorCount) / parseInt(count)) * 100).toFixed(2) : 0
             };
         })
     );
@@ -52,18 +56,21 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 
     const modelTotals = stats.reduce((acc, stat) => {
         if (!acc[stat.model]) {
-            acc[stat.model] = 0;
+            acc[stat.model] = { count: 0, errorCount: 0 };
         }
-        acc[stat.model] += stat.count;
+        acc[stat.model].count += stat.count;
+        acc[stat.model].errorCount += stat.errorCount;
         return acc;
     }, {});
 
-    const totalStatsHtml = Object.entries(modelTotals).map(([model, count]) => {
+    const totalStatsHtml = Object.entries(modelTotals).map(([model, { count, errorCount }]) => {
         const totalLimit = (dailyCallLimits[model] || 0) * apiKeys.length;
+        const totalErrorRate = count > 0 ? ((errorCount / count) * 100).toFixed(2) : 0;
+
         if (!totalLimit || totalLimit === Infinity) {
             return `<div class="progress-cell" style="margin-bottom: 5px;">
                         <strong style="flex-shrink: 0;">${model}:</strong>
-                        <span>${count} / Unlimited</span>
+                        <span>${count} / Unlimited (Errors: ${errorCount}, Error Rate: ${totalErrorRate}%)</span>
                     </div>`;
         }
         const percentageUsed = Math.min(100, (count / totalLimit) * 100);
@@ -86,7 +93,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                         <span>${percentageUsed.toFixed(2)}%</span>
                     </div>
                 </div>
-                <span class="limit-text">${count} / ${totalLimit}</span>
+                <span class="limit-text">${count} / ${totalLimit} (Errors: ${errorCount}, Error Rate: ${totalErrorRate}%)</span>
             </div>`;
     }).join('');
 
@@ -122,6 +129,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
                 <th>Daily Usage</th>
+                <th>Daily Errors</th>
+                <th>Error Rate</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
@@ -142,6 +151,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             }
             html += `
                 <td>${stat.model}</td>
+                <td>${stat.errorCount}</td>
+                <td>${stat.errorRate}%</td>
             `;
 
             if (dailyLimit === Infinity || !dailyLimit) {
