@@ -6,7 +6,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         return new Response("KV not bound!", { status: 500 });
     }
 
-    let genimikeyStr = env.GENIMI_KEYS;
+    let genimikeyStr = env.GEMINI_KEYS;
     if (!genimikeyStr) {
         return new Response("Missing GENIMI_KEY Config", { status: 401 });
     }
