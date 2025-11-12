@@ -1,0 +1,99 @@
+export async function handleStatisticsRequest(env, proxyConfig) {
+    const rateLimits = proxyConfig.rateLimits;
+    const dailyCallLimits = proxyConfig.dailyCallLimits;
+    const kv = env.GEMINI_RATE_LIMIT;
+    if (!kv) {
+        return new Response("KV not bound!", { status: 500 });
+    }
+
+    let genimikeyStr = env.GENIMI_KEYS;
+    if (!genimikeyStr) {
+        return new Response("Missing GENIMI_KEY Config", { status: 401 });
+    }
+    const apiKeys = genimikeyStr.split(',').map(s => s.trim()).filter(Boolean);
+    const models = Object.keys(rateLimits);
+    const today = new Date().toISOString().split('T')[0];
+
+    const statsPromises = apiKeys.flatMap(key =>
+        models.map(async model => {
+            const redactedKey = `${key.substring(0, 4)}****${key.substring(key.length - 4)}`;
+            const statsKey = `stats:${model}:${key}:${today}`;
+            const bannedKey = `banned:${model}:${key}`;
+            const lastUsedKey = `${model}:${key}`;
+
+            const [count, isBanned, lastUsedTimestamp] = await Promise.all([
+                kv.get(statsKey),
+                kv.get(bannedKey),
+                kv.get(lastUsedKey)
+            ]);
+
+            return {
+                key: redactedKey,
+                model,
+                count: parseInt(count) || 0,
+                banned: isBanned ? 'Yes' : 'No',
+                lastUsed: lastUsedTimestamp ? new Date(parseInt(lastUsedTimestamp)).toLocaleString() : 'Never',
+            };
+        })
+    );
+
+    const stats = await Promise.all(statsPromises);
+
+
+    let html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Proxy Statistics</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
+        h1 { color: #444; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        thead { background-color: #4CAF50; color: white; }
+        tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        tbody tr:hover { background-color: #f1f1f1; }
+        .banned-yes { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Gemini API Key Statistics (${today})</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>API Key (Redacted)</th>
+                <th>Model</th>
+                <th>Today's Call Count</th>
+                <th>Is Banned</th>
+                <th>Daily Limit</th>
+                <th>Last Used</th>
+            </tr>
+        </thead>
+        <tbody>
+`;
+
+    for (const stat of stats) {
+        html += `
+            <tr>
+                <td>${stat.key}</td>
+                <td>${stat.model}</td>
+                <td>${stat.count}</td>
+                <td class="${stat.banned === 'Yes' ? 'banned-yes' : ''}">${stat.banned}</td>
+                <td>${dailyCallLimits[stat.model] === Infinity ? 'Unlimited' : dailyCallLimits[stat.model]}</td>
+                <td>${stat.lastUsed}</td>
+            </tr>
+`;
+    }
+
+    html += `
+        </tbody>
+    </table>
+</body>
+</html>
+`;
+    return new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+}

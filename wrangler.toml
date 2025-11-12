@@ -6,6 +6,21 @@ compatibility_flags = ["nodejs_compat"]
 kv_namespaces = [
   { binding = "GEMINI_RATE_LIMIT", id = "e05bffd293bd4aa6962d5dbfb77a3b24" }
 ]
+
+[vars]
+GEMINI_PROXY_CONFIG = '''
+{
+    "rateLimits": {
+        "gemini-2.5-pro": 60,
+        "gemini-2.5-flash": 10
+    },
+    "dailyCallLimits": {
+        "gemini-2.5-pro": 45,
+        "gemini-2.5-flash": 240
+    }
+}
+'''
+
 [observability]
 [observability.logs]
 enabled = true

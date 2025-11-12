@@ -1,33 +1,21 @@
 import { handleVerification } from './verify_keys.js';
+import { handleStatisticsRequest } from './statistics.js';
 
-// 限流规则
-const RATE_LIMITS = {
-    "gemini-2.5-pro": 60,   // 每个 key 60 秒只能用一次
-    "gemini-2.5-flash": 10  // 每个 key 10 秒只能用一次
+const DEFAULT_RATE_LIMITS = {
+    "gemini-2.5-pro": 60,
+    "gemini-2.5-flash": 10
+};
+
+const DEFAULT_DAILY_CALL_LIMITS = {
+    "gemini-2.5-pro": 40,
+    "gemini-2.5-flash": 240
 };
 
 
 export async function handleRequest(request, env) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    const search = url.search;
-
-    // 健康检查
-    if (pathname === '/' || pathname === '/index.html') {
-        return new Response('Proxy is Running!', {
-            status: 200,
-            headers: { 'Content-Type': 'text/plain' }
-        });
-    }
-
-    if (pathname === '/verify' && request.method === 'POST') {
-        return handleVerification(request);
-    }
-
-    // 提取模型名
-    const modelMatch = pathname.match(/models\/([^:]+)/);
-    const modelName = modelMatch ? modelMatch[1] : "unknown";
-    const limitSeconds = RATE_LIMITS[modelName] || 30;
+    const proxyConfig = env.GEMINI_PROXY_CONFIG ? JSON.parse(env.GEMINI_PROXY_CONFIG) : { rateLimits: DEFAULT_RATE_LIMITS, dailyCallLimits: DEFAULT_DAILY_CALL_LIMITS };
+    const rateLimits = proxyConfig.rateLimits;
+    const dailyCallLimits = proxyConfig.dailyCallLimits;
 
     // 从 header 中提取多个 API key
     const apiToken = request.headers.get("x-goog-api-key");
@@ -47,6 +35,30 @@ export async function handleRequest(request, env) {
     if (!apiToken || !allowedTokens.has(apiToken)) {
         return new Response(`Unauthorized apiToken ${apiToken}`, { status: 401 });
     }
+
+    const url = new URL(request.url);
+    const pathname = url.pathname;
+    const search = url.search;
+
+    // 健康检查
+    if (pathname === '/' || pathname === '/index.html') {
+        return new Response('Proxy is Running!', {
+            status: 200,
+            headers: { 'Content-Type': 'text/plain' }
+        });
+    }
+
+    if (pathname === '/verify' && request.method === 'POST') {
+        return handleVerification(request);
+    }
+    if (pathname === '/statistics') {
+        return handleStatisticsRequest(env, rateLimits, dailyCallLimits);
+    }
+    // 提取模型名
+    const modelMatch = pathname.match(/models\/([^:]+)/);
+    const modelName = modelMatch ? modelMatch[1] : "unknown";
+    const limitSeconds = rateLimits[modelName] || 30;
+
 
     // =====  配置的 GENIMI_KEY  =====
     let genimikeyStr = env.GENIMI_KEYS;
@@ -78,6 +90,24 @@ export async function handleRequest(request, env) {
     for (let i = 0; i < apiKeys.length; i++) {
         const idx = (lastIndex + i + 1) % apiKeys.length;
         const key = apiKeys[idx];
+
+        // 检查 key 是否被封禁
+        const bannedKey = `banned:${modelName}:${key}`;
+        const isBanned = await kv.get(bannedKey);
+        if (isBanned) {
+            continue; // 如果被封禁，则跳过此 key
+        }
+
+        // 检查每日调用次数上限
+        const today = new Date().toISOString().split('T')[0];
+        const statsKey = `stats:${modelName}:${key}:${today}`;
+        const currentDailyCount = parseInt(await kv.get(statsKey)) || 0;
+        const dailyLimit = dailyCallLimits[modelName] || Infinity;
+
+        if (currentDailyCount >= dailyLimit) {
+            continue; // 如果达到每日上限，则跳过此 key
+        }
+
         const rateKey = `${modelName}:${key}`;
 
         const lastUsed = parseInt(await kv.get(rateKey)) || 0;
@@ -101,7 +131,8 @@ export async function handleRequest(request, env) {
     await kv.put(`${modelName}:${selectedKey}`, String(now), { expiration_ttl: 3600 });
     await kv.put(rrKey, String(selectedIndex), { expiration_ttl: 86400 });
 
-    console.log(`${modelName} 使用 Key: ${selectedKey}`);
+    const redactedKey = `${selectedKey.substring(0, 4)}****${selectedKey.substring(selectedKey.length - 4)}`;
+    console.log(`${modelName} 使用 Key: ${redactedKey}`);
 
     // 转发请求到 Gemini API
     const targetUrl = `https://generativelanguage.googleapis.com${pathname}${search}`;
@@ -122,6 +153,18 @@ export async function handleRequest(request, env) {
             headers,
             body: request.body
         });
+
+        // 如果返回 429，则将该 key 封禁一小时
+        if (response.status === 429) {
+            const bannedKey = `banned:${modelName}:${selectedKey}`;
+            await kv.put(bannedKey, 'true', { expirationTtl: 3600 });
+        } else if (response.ok) {
+            // 统计每日调用次数
+            const today = new Date().toISOString().split('T')[0]; // 格式 YYYY-MM-DD
+            const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
+            const currentCount = parseInt(await kv.get(statsKey)) || 0;
+            await kv.put(statsKey, String(currentCount + 1), { expirationTtl: 86400 }); // 24小时后过期
+        }
 
         const responseHeaders = new Headers(response.headers);
         responseHeaders.delete('transfer-encoding');
