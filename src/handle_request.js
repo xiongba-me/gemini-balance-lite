@@ -1,12 +1,4 @@
 import { handleVerification } from './verify_keys.js';
-import openai from './openai.mjs';
-
-export default {
-    async fetch(request, env) {
-        return handleRequest(request, env);
-    }
-};
-
 export async function handleRequest(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname;
@@ -24,15 +16,6 @@ export async function handleRequest(request, env) {
         return handleVerification(request);
     }
 
-    // ===== 处理 OpenAI 兼容路径 =====
-    if (
-        url.pathname.endsWith("/chat/completions") ||
-        url.pathname.endsWith("/completions") ||
-        url.pathname.endsWith("/embeddings") ||
-        url.pathname.endsWith("/models")
-    ) {
-        return openai.fetch(request);
-    }
 
     // ===== 提取模型名 =====
     const modelMatch = pathname.match(/models\/([^:]+)/);
