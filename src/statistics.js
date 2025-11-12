@@ -78,7 +78,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
                 <th>Today's Calls</th>
-                <th>Remaining / Daily Limit</th>
+                <th>Daily Usage</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
@@ -105,13 +105,13 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             if (dailyLimit === Infinity || !dailyLimit) {
                 html += '<td>Unlimited</td>';
             } else {
-                const remainingCalls = dailyLimit - stat.count;
-                const percentageRemaining = Math.max(0, (remainingCalls / dailyLimit) * 100);
+                const usedCalls = stat.count;
+                const percentageUsed = Math.min(100, (usedCalls / dailyLimit) * 100);
 
                 let progressBarColor = '#4CAF50'; // green
-                if (percentageRemaining <= 20) {
+                if (percentageUsed >= 80) {
                     progressBarColor = '#f44336'; // red
-                } else if (percentageRemaining <= 50) {
+                } else if (percentageUsed >= 50) {
                     progressBarColor = '#ffc107'; // yellow
                 }
 
@@ -119,8 +119,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                     <td>
                         <div class="progress-cell">
                             <div class="progress-container">
-                                <div class="progress-bar" style="width: ${percentageRemaining.toFixed(2)}%; background-color: ${progressBarColor};">
-                                    <span>${remainingCalls}</span>
+                                <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor};">
+                                    <span>${usedCalls}</span>
                                 </div>
                             </div>
                             <span class="limit-text">/ ${dailyLimit}</span>
