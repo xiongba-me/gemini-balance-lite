@@ -59,11 +59,15 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
         h1 { color: #444; }
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr:hover { background-color: #f1f1f1; }
         .banned-yes { color: red; font-weight: bold; }
+        .progress-cell { display: flex; align-items: center; justify-content: space-between; }
+        .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 100px; }
+        .progress-bar { height: 100%; border-radius: 4px; text-align: right; color: white; line-height: 20px; padding-right: 5px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
+        .limit-text { font-size: 0.9em; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -73,9 +77,8 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             <tr>
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
-                <th>Today's Call Count</th>
-                <th>Daily Limit</th>
-                <th>Remaining Calls</th>
+                <th>Today's Calls</th>
+                <th>Remaining / Daily Limit</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
@@ -89,7 +92,6 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         for (let i = 0; i < keyStats.length; i++) {
             const stat = keyStats[i];
             const dailyLimit = dailyCallLimits[stat.model];
-            const remainingCalls = dailyLimit === Infinity ? 'Unlimited' : (dailyLimit - stat.count);
             html += `
             <tr>`;
             if (i === 0) {
@@ -98,8 +100,36 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             html += `
                 <td>${stat.model}</td>
                 <td>${stat.count}</td>
-                <td>${dailyLimit === Infinity ? 'Unlimited' : dailyLimit}</td>
-                <td>${remainingCalls}</td>
+            `;
+
+            if (dailyLimit === Infinity || !dailyLimit) {
+                html += '<td>Unlimited</td>';
+            } else {
+                const remainingCalls = dailyLimit - stat.count;
+                const percentageRemaining = Math.max(0, (remainingCalls / dailyLimit) * 100);
+
+                let progressBarColor = '#4CAF50'; // green
+                if (percentageRemaining <= 20) {
+                    progressBarColor = '#f44336'; // red
+                } else if (percentageRemaining <= 50) {
+                    progressBarColor = '#ffc107'; // yellow
+                }
+
+                html += `
+                    <td>
+                        <div class="progress-cell">
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${percentageRemaining.toFixed(2)}%; background-color: ${progressBarColor};">
+                                    <span>${remainingCalls}</span>
+                                </div>
+                            </div>
+                            <span class="limit-text">/ ${dailyLimit}</span>
+                        </div>
+                    </td>
+                `;
+            }
+
+            html += `
                 <td class="${stat.banned === 'Yes' ? 'banned-yes' : ''}">${stat.banned}</td>
                 <td>${stat.lastUsed}</td>
             </tr>
