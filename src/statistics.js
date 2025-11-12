@@ -70,7 +70,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     <style>
         body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
         h1 { color: #444; }
-        h2 { color: #666; font-size: 1.2em; margin-top: 1.5em;}
+        h2 { color: #666; font-size: 1.2em; margin-top: 0.5em;}
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
