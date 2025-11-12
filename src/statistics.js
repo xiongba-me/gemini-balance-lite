@@ -115,6 +115,18 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 100px; }
         .progress-bar { height: 100%; border-radius: 4px; text-align: center; color: white; line-height: 20px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
         .limit-text { font-size: 0.9em; white-space: nowrap; }
+        .error-low {
+            background-color: #d4edda; /* 浅绿色 */
+            color: #155724; /* 深绿色文本 */
+        }
+        .error-medium {
+            background-color: #fff3cd; /* 浅橙色 */
+            color: #856404; /* 深橙色文本 */
+        }
+        .error-high {
+            background-color: #f8d7da; /* 浅红色 */
+            color: #721c24; /* 深红色文本 */
+        }
     </style>
 </head>
 <body>
@@ -125,6 +137,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
                 <th>Daily Usage</th>
+                <th>ERROR</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
@@ -163,6 +176,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                     progressBarColor = '#ffc107'; // yellow
                     // textColor remains #333 for yellow
                 }
+
                 // textColor remains #333 for green
 
                 html += `
@@ -173,9 +187,11 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                                     <span>${percentageUsed.toFixed(2)}%</span>
                                 </div>
                             </div>
-                            <span class="limit-text">${errorRatio.toFixed(2)}%</span>
                             <span class="limit-text">${usedCalls} / ${dailyLimit}</span>
                         </div>
+                    </td>
+                   <td class="${errorRatio < 10 ? 'error-low' : errorRatio < 30 ? 'error-medium' : 'error-high'}">
+                        ${errorRatio.toFixed(2)}%
                     </td>
                 `;
             }
