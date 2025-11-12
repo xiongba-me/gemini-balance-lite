@@ -3,12 +3,12 @@ name = "gemini-balance-lite"
 main = "src/index.js"
 compatibility_date = "2025-06-17"
 compatibility_flags = ["nodejs_compat"]
+kv_namespaces = [
+  { binding = "GEMINI_RATE_LIMIT", id = "e05bffd293bd4aa6962d5dbfb77a3b24" }
+]
 [observability]
 [observability.logs]
 enabled = true
 head_sampling_rate = 1
 invocation_logs = true
 persist = true
-kv_namespaces = [
-  { binding = "GEMINI_RATE_LIMIT", id = "e05bffd293bd4aa6962d5dbfb77a3b24" }
-]
