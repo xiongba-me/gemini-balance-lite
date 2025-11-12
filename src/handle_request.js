@@ -45,11 +45,11 @@ export async function handleRequest(request, env) {
     );
     //如果 access Key 不对==
     if (!apiToken || !allowedTokens.has(apiToken)) {
-        return new Response("Unauthorized", { status: 401 });
+        return new Response(`Unauthorized apiToken ${apiToken}`, { status: 401 });
     }
 
     // =====  配置的 GENIMI_KEY  =====
-    let genimikeyStr = env.GENIMI_KEY;
+    let genimikeyStr = env.GENIMI_KEYS;
 
     if(!genimikeyStr){
         return new Response("Missing GENIMI_KEY Config", { status: 401 });
