@@ -24,7 +24,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             const bannedKey = `banned:${model}:${key}`;
             const lastUsedKey = `${model}:${key}`;
 
-            const [count, isBanned, lastUsedTimestamp] = await Promise.all([
+            const [count, errorCount,isBanned, lastUsedTimestamp] = await Promise.all([
                 kv.get(statsKey),
                 kv.get(errorKey),
                 kv.get(bannedKey),
