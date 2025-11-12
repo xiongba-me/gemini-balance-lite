@@ -48,6 +48,18 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     }, {});
 
 
+    const modelTotals = stats.reduce((acc, stat) => {
+        if (!acc[stat.model]) {
+            acc[stat.model] = 0;
+        }
+        acc[stat.model] += stat.count;
+        return acc;
+    }, {});
+
+    const totalCallsStr = Object.entries(modelTotals)
+        .map(([model, count]) => `${model}: ${count}`)
+        .join('; ');
+
     let html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -58,6 +70,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     <style>
         body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; color: #333; }
         h1 { color: #444; }
+        h2 { color: #666; font-size: 1.2em; margin-top: 1.5em;}
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
@@ -72,6 +85,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 </head>
 <body>
     <h1>Gemini API Key Statistics (${today})</h1>
+    <h2>Total Calls: ${totalCallsStr}</h2>
     <table>
         <thead>
             <tr>
@@ -122,7 +136,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                         <div class="progress-cell">
                             <div class="progress-container">
                                 <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};">
-                                    <span>${percentageUsed.toFixed(0)}%</span>
+                                    <span>${percentageUsed.toFixed(2)}%</span>
                                 </div>
                             </div>
                             <span class="limit-text">${usedCalls} / ${dailyLimit}</span>
