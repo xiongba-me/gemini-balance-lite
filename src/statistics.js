@@ -39,6 +39,14 @@ export async function handleStatisticsRequest(env, proxyConfig) {
 
     const stats = await Promise.all(statsPromises);
 
+    const groupedStats = stats.reduce((acc, stat) => {
+        if (!acc[stat.key]) {
+            acc[stat.key] = [];
+        }
+        acc[stat.key].push(stat);
+        return acc;
+    }, {});
+
 
     let html = `
 <!DOCTYPE html>
@@ -66,25 +74,37 @@ export async function handleStatisticsRequest(env, proxyConfig) {
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
                 <th>Today's Call Count</th>
-                <th>Is Banned</th>
                 <th>Daily Limit</th>
+                <th>Remaining Calls</th>
+                <th>Is Banned</th>
                 <th>Last Used</th>
             </tr>
         </thead>
         <tbody>
 `;
 
-    for (const stat of stats) {
-        html += `
-            <tr>
-                <td>${stat.key}</td>
+    for (const key in groupedStats) {
+        const keyStats = groupedStats[key];
+        const rowSpan = keyStats.length;
+        for (let i = 0; i < keyStats.length; i++) {
+            const stat = keyStats[i];
+            const dailyLimit = dailyCallLimits[stat.model];
+            const remainingCalls = dailyLimit === Infinity ? 'Unlimited' : (dailyLimit - stat.count);
+            html += `
+            <tr>`;
+            if (i === 0) {
+                html += `<td rowspan="${rowSpan}">${stat.key}</td>`;
+            }
+            html += `
                 <td>${stat.model}</td>
                 <td>${stat.count}</td>
+                <td>${dailyLimit === Infinity ? 'Unlimited' : dailyLimit}</td>
+                <td>${remainingCalls}</td>
                 <td class="${stat.banned === 'Yes' ? 'banned-yes' : ''}">${stat.banned}</td>
-                <td>${dailyCallLimits[stat.model] === Infinity ? 'Unlimited' : dailyCallLimits[stat.model]}</td>
                 <td>${stat.lastUsed}</td>
             </tr>
 `;
+        }
     }
 
     html += `
