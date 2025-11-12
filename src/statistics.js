@@ -106,7 +106,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         h1 span { font-size: 0.8em; margin-left: 1em; display: flex; align-items: center; flex-wrap: wrap;}
         h1 span .progress-cell { margin-right: 1em; margin-bottom: 5px;}
         table { width: 100%; border-collapse: collapse; margin-top: 1em; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
+        th, td { padding: 6px 8px; border: 1px solid #ddd; text-align: left; vertical-align: middle;}
         thead { background-color: #4CAF50; color: white; }
         tbody tr:nth-child(even) { background-color: #f9f9f9; }
         tbody tr:hover { background-color: #f1f1f1; }
