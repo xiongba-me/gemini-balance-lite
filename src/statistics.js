@@ -60,18 +60,25 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         const totalLimit = (dailyCallLimits[model] || 0) * apiKeys.length;
         if (!totalLimit || totalLimit === Infinity) {
             return `<div class="progress-cell" style="margin-bottom: 5px;">
-                        <strong style="width: 150px; flex-shrink: 0;">${model}:</strong>
+                        <strong style="flex-shrink: 0;">${model}:</strong>
                         <span>${count} / Unlimited</span>
                     </div>`;
         }
         const percentageUsed = Math.min(100, (count / totalLimit) * 100);
-        let progressBarColor = '#4CAF50', textColor = 'white';
-        if (percentageUsed >= 80) { progressBarColor = '#f44336'; }
-        else if (percentageUsed >= 50) { progressBarColor = '#ffc107'; textColor = '#333'; }
-        else if (percentageUsed < 20) { textColor = '#333'; }
+        let progressBarColor = '#4CAF50', textColor = '#333'; // Default dark text for green
+        if (percentageUsed >= 80) {
+            progressBarColor = '#f44336';
+            textColor = 'white'; // White text on red
+        } else if (percentageUsed >= 50) {
+            progressBarColor = '#ffc107';
+            // textColor remains #333 for yellow
+        } else {
+            // progressBarColor remains #4CAF50 for green
+            // textColor remains #333 for green
+        }
         return `
             <div class="progress-cell" style="margin-bottom: 5px;">
-                <strong style="width: 150px; flex-shrink: 0;">${model}:</strong>
+                <strong style="flex-shrink: 0;">${model}:</strong>
                 <div class="progress-container">
                     <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};">
                         <span>${percentageUsed.toFixed(2)}%</span>
@@ -142,15 +149,15 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 const percentageUsed = Math.min(100, (usedCalls / dailyLimit) * 100);
 
                 let progressBarColor = '#4CAF50'; // green
-                let textColor = 'white';
+                let textColor = '#333'; // Default dark text for green
                 if (percentageUsed >= 80) {
                     progressBarColor = '#f44336'; // red
+                    textColor = 'white'; // White text on red
                 } else if (percentageUsed >= 50) {
                     progressBarColor = '#ffc107'; // yellow
-                    textColor = '#333';
-                } else if (percentageUsed < 20) {
-                    textColor = '#333';
+                    // textColor remains #333 for yellow
                 }
+                // textColor remains #333 for green
 
                 html += `
                     <td>
