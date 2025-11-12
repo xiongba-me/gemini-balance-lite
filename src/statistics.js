@@ -1,3 +1,5 @@
+import { getLocalDate } from './date_utils.js';
+
 export async function handleStatisticsRequest(env,proxyConfig) {
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
@@ -12,7 +14,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     }
     const apiKeys = genimikeyStr.split(',').map(s => s.trim()).filter(Boolean);
     const models = Object.keys(rateLimits);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDate();
 
     const statsPromises = apiKeys.flatMap(key =>
         models.map(async model => {
@@ -32,7 +34,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 model,
                 count: parseInt(count) || 0,
                 banned: isBanned ? 'Yes' : 'No',
-                lastUsed: lastUsedTimestamp ? new Date(parseInt(lastUsedTimestamp)).toLocaleString() : 'Never',
+                lastUsed: lastUsedTimestamp ? new Date(parseInt(lastUsedTimestamp)).toLocaleString('zh-CN', { timeZone: 'America/Los_Angeles' }) : 'Never',
             };
         })
     );

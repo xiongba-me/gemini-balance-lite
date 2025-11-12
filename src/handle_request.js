@@ -1,5 +1,6 @@
 import { handleVerification } from './verify_keys.js';
 import { handleStatisticsRequest } from './statistics.js';
+import { getLocalDate } from './date_utils.js';
 
 const DEFAULT_RATE_LIMITS = {
     "gemini-2.5-pro": 60,
@@ -106,7 +107,7 @@ export async function handleRequest(request, env) {
         }
 
         // 检查每日调用次数上限
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDate();
         const statsKey = `stats:${modelName}:${key}:${today}`;
         const currentDailyCount = parseInt(await kv.get(statsKey)) || 0;
         const dailyLimit = dailyCallLimits[modelName] || Infinity;
@@ -161,7 +162,7 @@ export async function handleRequest(request, env) {
             body: request.body
         });
         // 统计每日调用次数
-        const today = new Date().toISOString().split('T')[0]; // 格式 YYYY-MM-DD
+        const today = getLocalDate(); // 格式 YYYY-MM-DD
         const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
         const currentCount = parseInt(await kv.get(statsKey)) || 0;
         await kv.put(statsKey, String(currentCount + 1), { expirationTtl: 86400 }); // 24小时后过期
