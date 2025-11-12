@@ -1,4 +1,4 @@
-export async function handleStatisticsRequest(env, proxyConfig) {
+export async function handleStatisticsRequest(env,proxyConfig) {
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
     const kv = env.GEMINI_RATE_LIMIT;

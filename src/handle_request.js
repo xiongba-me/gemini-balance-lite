@@ -1,5 +1,5 @@
 import { handleVerification } from './verify_keys.js';
-import {handleStatisticsRequest} from "./statistics";
+import { handleStatisticsRequest } from './statistics.js';
 
 const DEFAULT_RATE_LIMITS = {
     "gemini-2.5-pro": 60,
@@ -56,7 +56,7 @@ export async function handleRequest(request, env) {
     }
 
     if (pathname === '/statistics') {
-        return handleVerification(env);
+        return handleVerification(env,proxyConfig);
     }
     if (pathname === '/verify') {
         return handleStatisticsRequest(env);
