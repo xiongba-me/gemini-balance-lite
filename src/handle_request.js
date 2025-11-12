@@ -14,7 +14,7 @@ export async function handleRequest(request, env) {
 
     // 健康检查
     if (pathname === '/' || pathname === '/index.html') {
-        return new Response('✅ Proxy is Running!', {
+        return new Response('Proxy is Running!', {
             status: 200,
             headers: { 'Content-Type': 'text/plain' }
         });
@@ -81,7 +81,7 @@ export async function handleRequest(request, env) {
     await kv.put(`${modelName}:${selectedKey}`, String(now), { expiration_ttl: 3600 });
     await kv.put(rrKey, String(selectedIndex), { expiration_ttl: 86400 });
 
-    console.log(`✅ ${modelName} 使用 Key: ${selectedKey}`);
+    console.log(`${modelName} 使用 Key: ${selectedKey}`);
 
     // 转发请求到 Gemini API
     const targetUrl = `https://generativelanguage.googleapis.com${pathname}${search}`;
