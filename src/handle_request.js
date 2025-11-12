@@ -56,10 +56,10 @@ export async function handleRequest(request, env) {
     }
 
     if (pathname === '/statistics') {
-        return handleStatisticsRequest(env);
+        return handleStatisticsRequest(env,proxyConfig);
     }
     if (pathname === '/verify') {
-        return handleVerification(env,proxyConfig);
+        return handleVerification(env);
     }
     // 提取模型名
     const modelMatch = pathname.match(/models\/([^:]+)/);
