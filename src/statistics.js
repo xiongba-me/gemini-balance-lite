@@ -66,7 +66,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         .banned-yes { color: red; font-weight: bold; }
         .progress-cell { display: flex; align-items: center; justify-content: space-between; }
         .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 100px; }
-        .progress-bar { height: 100%; border-radius: 4px; text-align: right; color: white; line-height: 20px; padding-right: 5px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
+        .progress-bar { height: 100%; border-radius: 4px; text-align: center; color: white; line-height: 20px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
         .limit-text { font-size: 0.9em; white-space: nowrap; }
     </style>
 </head>
@@ -77,7 +77,6 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             <tr>
                 <th>API Key (Redacted)</th>
                 <th>Model</th>
-                <th>Today's Calls</th>
                 <th>Daily Usage</th>
                 <th>Is Banned</th>
                 <th>Last Used</th>
@@ -99,7 +98,6 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             }
             html += `
                 <td>${stat.model}</td>
-                <td>${stat.count}</td>
             `;
 
             if (dailyLimit === Infinity || !dailyLimit) {
@@ -109,21 +107,23 @@ export async function handleStatisticsRequest(env,proxyConfig) {
                 const percentageUsed = Math.min(100, (usedCalls / dailyLimit) * 100);
 
                 let progressBarColor = '#4CAF50'; // green
+                let textColor = 'white';
                 if (percentageUsed >= 80) {
                     progressBarColor = '#f44336'; // red
                 } else if (percentageUsed >= 50) {
                     progressBarColor = '#ffc107'; // yellow
+                    textColor = '#333';
                 }
 
                 html += `
                     <td>
                         <div class="progress-cell">
                             <div class="progress-container">
-                                <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor};">
-                                    <span>${usedCalls}</span>
+                                <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};">
+                                    <span>${percentageUsed.toFixed(0)}%</span>
                                 </div>
                             </div>
-                            <span class="limit-text">/ ${dailyLimit}</span>
+                            <span class="limit-text">${usedCalls} / ${dailyLimit}</span>
                         </div>
                     </td>
                 `;
