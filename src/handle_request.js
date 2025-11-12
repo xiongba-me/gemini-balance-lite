@@ -55,7 +55,7 @@ export async function handleRequest(request, env) {
         return new Response("Missing GENIMI_KEY Config", { status: 401 });
     }
 
-    let apiKeys= GENIMI_KEY.split(',').map(s => s.trim()).filter(Boolean);
+    let apiKeys= genimikeyStr.split(',').map(s => s.trim()).filter(Boolean);
 
     if (apiKeys.length === 0) {
         return new Response("Missing x-goog-api-key ", { status: 400 });
