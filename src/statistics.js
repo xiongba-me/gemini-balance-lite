@@ -83,7 +83,11 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         }
         return `
             <div class="progress-cell" style="margin-bottom: 5px;">
-                <strong style="flex-shrink: 0;">${model}:</strong> <div class="progress-container"><div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};"><span>${percentageUsed.toFixed(2)}%</span></div></div> <span class="limit-text">${count} / ${totalLimit}</span></div>`;
+                <strong style="flex-shrink: 0;">${model}:</strong> 
+                <div class="progress-container">
+                <div class="progress-bar" style="width: ${percentageUsed.toFixed(2)}%; background-color: ${progressBarColor}; color: ${textColor};">
+                <span>${percentageUsed.toFixed(2)}%</span></div></div>
+                 <span class="limit-text">${count} / ${totalLimit}</span></div>`;
     }).join('');
 
     let html = `
@@ -106,7 +110,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         tbody tr:hover { background-color: #f1f1f1; }
         .banned-yes { color: red; font-weight: bold; }
         .progress-cell { display: flex; align-items: center; justify-content: space-between; }
-        .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin-right: 10px; min-width: 200px; }
+        .progress-container { flex-grow: 1; height: 20px; background-color: #e0e0e0; border-radius: 4px; position: relative; margin:0 5px; min-width: 200px; }
         .progress-bar { height: 100%; border-radius: 4px; text-align: center; color: white; line-height: 20px; box-sizing: border-box; transition: width 0.3s ease-in-out; }
         .limit-text { font-size: 0.9em; white-space: nowrap; }
         .error-low {
@@ -125,7 +129,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 </head>
         <table> 
         <tr>
-            <td>Gemini API Key Statistics (${today})</td>
+            <td style="font-weight: bold; font-size: 1.2em;">Gemini API Key Statistics (${today})</td>
             <td>${totalStatsHtml}</td>
         </tr>
         </table>
