@@ -146,7 +146,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 </head>
         <table> 
         <tr>
-            <td style="font-weight: bold; font-size: 1.2em;">Gemini API Key Statistics (${today})</td>
+            <td style="font-weight: bold; font-size: 1.2em;width: 30%">Gemini API Key Statistics (${today})</td>
             <td>${totalStatsHtml}</td>
         </tr>
         </table>
