@@ -123,11 +123,12 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         }
     </style>
 </head>
-<body>
-    <h1>
-        <span>Gemini API Key Statistics (${today})</span>
-        <div class="header-stats">${totalStatsHtml}</div>
-    </h1>
+        <table> 
+        <tr>
+            <td>Gemini API Key Statistics (${today})</td>
+            <td>${totalStatsHtml}</td>
+        </tr>
+        </table>
     <table>
         <thead>
             <tr>

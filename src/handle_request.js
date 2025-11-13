@@ -14,7 +14,6 @@ const DEFAULT_DAILY_CALL_LIMITS = {
 
 
 export async function handleRequest(request, env) {
-
     const url = new URL(request.url);
     const pathname = url.pathname;
     const search = url.search;
@@ -35,6 +34,7 @@ export async function handleRequest(request, env) {
     } else {
         apiToken = request.headers.get("x-goog-api-key");
     }
+
 
     if (!apiToken) {
         return new Response("Missing API key. ", {status: 400});
@@ -70,7 +70,6 @@ export async function handleRequest(request, env) {
     const modelName = modelMatch ? modelMatch[1] : "unknown";
     const limitSeconds = rateLimits[modelName] || 30;
 
-
     // =====  配置的 GENIMI_KEY  =====
     let genimikeyStr = env.GEMINI_KEYS;
 
@@ -89,19 +88,14 @@ export async function handleRequest(request, env) {
         return new Response("KV not bound!", {status: 500});
     }
 
-    // 从 KV 获取上次使用的索引，实现轮询
-    const rrKey = `rr_index:${modelName}`;
-    let lastIndex = parseInt(await kv.get(rrKey)) || 0;
 
     const now = Date.now();
     let selectedKey = null;
-    let selectedIndex = -1;
+    // Create a shuffled copy of the keys to iterate through randomly
+    const shuffledKeys = [...apiKeys].sort(() => Math.random() - 0.5);
 
-    // 轮询查找可用 key
-    for (let i = 0; i < apiKeys.length; i++) {
-        const idx = (lastIndex + i + 1) % apiKeys.length;
-        const key = apiKeys[idx];
-
+    // 查找可用 key
+    for (const key of shuffledKeys) {
         // 检查 key 是否被封禁
         const bannedKey = `banned:${modelName}:${key}`;
         const isBanned = await kv.get(bannedKey);
@@ -126,7 +120,6 @@ export async function handleRequest(request, env) {
 
         if (elapsed >= limitSeconds) {
             selectedKey = key;
-            selectedIndex = idx;
             break;
         }
     }
@@ -140,7 +133,6 @@ export async function handleRequest(request, env) {
 
     // 记录本次使用时间
     await kv.put(`${modelName}:${selectedKey}`, String(now), {expiration_ttl: 3600});
-    await kv.put(rrKey, String(selectedIndex), {expiration_ttl: 86400});
 
     const redactedKey = `${selectedKey.substring(0, 4)}****${selectedKey.substring(selectedKey.length - 4)}`;
     console.log(`${modelName} 使用 Key: ${redactedKey}`);
@@ -168,7 +160,7 @@ export async function handleRequest(request, env) {
         const today = getLocalDate(); // 格式 YYYY-MM-DD
         const statsKey = `stats:${modelName}:${selectedKey}:${today}`;
         const currentCount = parseInt(await kv.get(statsKey)) || 0;
-        await kv.put(statsKey, String(currentCount + 1), {expirationTtl: 86400}); // 24小时后过期
+        await kv.put(statsKey, String(currentCount + 1), {expirationTtl: 172800}); // 24小时后过期
 
         if (!response.ok) {
             const clonedResponse = response.clone();
@@ -187,9 +179,9 @@ export async function handleRequest(request, env) {
                 await kv.put(bannedKey, 'true', {expirationTtl: 3600});
             }
             // 统计每日调用次数
-            const statsKey = `error:${modelName}:${selectedKey}:${today}`;
-            const errorCount = parseInt(await kv.get(statsKey)) || 0;
-            await kv.put(statsKey, String(errorCount + 1), {expirationTtl: 86400}); // 24小时后过期
+            const errorKey = `error:${modelName}:${selectedKey}:${today}`;
+            const errorCount = parseInt(await kv.get(errorKey)) || 0;
+            await kv.put(errorKey, String(errorCount + 1), {expirationTtl: 172800}); // 48小时后过期
         }
         const responseHeaders = new Headers(response.headers);
         responseHeaders.delete('transfer-encoding');
