@@ -16,7 +16,23 @@ export async function handleStatisticsRequest(env,proxyConfig) {
     const models = Object.keys(rateLimits);
     const today = getLocalDate();
 
-    const statsPromises = apiKeys.flatMap(key =>
+    const keysWithLastUsed = await Promise.all(apiKeys.map(async key => {
+        let lastUsed = 0;
+        for (const model of models) {
+            const lastUsedTimestamp = await kv.get(`${model}:${key}`);
+            if (lastUsedTimestamp) {
+                lastUsed = Math.max(lastUsed, parseInt(lastUsedTimestamp));
+            }
+        }
+        return { key, lastUsed };
+    }));
+
+    // Sort keys by the most recent usage
+    keysWithLastUsed.sort((a, b) => b.lastUsed - a.lastUsed);
+
+    const sortedApiKeys = keysWithLastUsed.map(item => item.key);
+
+    const statsPromises = sortedApiKeys.flatMap(key =>
         models.map(async model => {
             const redactedKey = `${key.substring(0, 4)}****${key.substring(key.length - 4)}`;
             const statsKey = `stats:${model}:${key}:${today}`;
@@ -24,7 +40,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
             const bannedKey = `banned:${model}:${key}`;
             const lastUsedKey = `${model}:${key}`;
 
-            const [count, errorCount,isBanned, lastUsedTimestamp] = await Promise.all([
+            const [count, errorCount, isBanned, lastUsedTimestamp] = await Promise.all([
                 kv.get(statsKey),
                 kv.get(errorKey),
                 kv.get(bannedKey),
@@ -33,6 +49,7 @@ export async function handleStatisticsRequest(env,proxyConfig) {
 
             return {
                 key: redactedKey,
+                fullKey: key,
                 model,
                 count: parseInt(count) || 0,
                 errorCount: parseInt(errorCount) || 0,
@@ -147,8 +164,12 @@ export async function handleStatisticsRequest(env,proxyConfig) {
         <tbody>
 `;
 
-    for (const key in groupedStats) {
+    const sortedKeys = keysWithLastUsed.map(item => `${item.key.substring(0, 4)}****${item.key.substring(item.key.length - 4)}`);
+
+    for (const key of sortedKeys) {
         const keyStats = groupedStats[key];
+        if (!keyStats) continue;
+
         const rowSpan = keyStats.length;
         for (let i = 0; i < keyStats.length; i++) {
             const stat = keyStats[i];
