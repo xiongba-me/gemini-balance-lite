@@ -130,6 +130,7 @@ export async function handleRequest(request, env) {
 
     // 转发请求到 Gemini API
     const targetUrl = `https://generativelanguage.googleapis.com${pathname}${search}`;
+    console.info(targetUrl);
     const headers = new Headers();
 
     for (const [key, value] of request.headers.entries()) {
