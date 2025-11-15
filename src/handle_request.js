@@ -115,11 +115,11 @@ export async function handleRequest(request, env) {
     await kv.put(`${modelName}:${selectedKey}`, String(now), {expiration_ttl: 3600});
 
     const redactedKey = `${selectedKey.substring(0, 4)}****${selectedKey.substring(selectedKey.length - 4)}`;
-    console.log(`${modelName} 使用 Key: ${redactedKey}`);
+    // console.log(`${modelName} 使用 Key: ${redactedKey}`);
 
     // 转发请求到 Gemini API
     const targetUrl = `https://generativelanguage.googleapis.com${pathname}${search}`;
-    console.log(targetUrl);
+    // console.log(targetUrl);
     const headers = new Headers();
 
     for (const [key, value] of request.headers.entries()) {
@@ -130,15 +130,15 @@ export async function handleRequest(request, env) {
             headers.set(key, value);
         }
     }
-        if (request.method !== 'GET' && request.method !== 'HEAD') {
-        const clonedRequest = request.clone();
-        try {
-            const bodyText = await clonedRequest.text();
-            console.log("请求内容:", bodyText);
-        } catch (e) {
-            console.error("无法读取请求内容:", e);
-        }
-    }
+        // if (request.method !== 'GET' && request.method !== 'HEAD') {
+        // const clonedRequest = request.clone();
+        // try {
+        //     const bodyText = await clonedRequest.text();
+        //     console.log("请求内容:", bodyText);
+        // } catch (e) {
+        //     console.error("无法读取请求内容:", e);
+        // }
+        // }
     try {
         const response = await fetch(targetUrl, {
             method: request.method,
