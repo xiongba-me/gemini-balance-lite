@@ -25,17 +25,8 @@ export async function handleRequest(request, env) {
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
-    // 根据路径判断从 URL 参数或 header 中提取 API key
-    let apiToken;
-    const pathsUsingUrlApiKey = ['/verify', '/statistics'];
-
-    if (pathsUsingUrlApiKey.includes(pathname)) {
-        apiToken = url.searchParams.get('token');
-    } else {
-        apiToken = request.headers.get("x-goog-api-key");
-    }
-
-
+    // 先从header中取 header 中提取 API key
+    const apiToken = request.headers.get("x-goog-api-key") || url.searchParams.get('key');
     if (!apiToken) {
         return new Response("Missing API key. ", {status: 400});
     }
