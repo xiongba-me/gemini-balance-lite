@@ -2,26 +2,12 @@ import {handleVerification} from './verify_keys.js';
 import {handleStatisticsRequest} from './statistics.js';
 import {getLocalDate} from './date_utils.js';
 
-const DEFAULT_RATE_LIMITS = {
-    "gemini-2.5-pro": 60,
-    "gemini-2.5-flash": 10
-};
-
-const DEFAULT_DAILY_CALL_LIMITS = {
-    "gemini-2.5-pro": 40,
-    "gemini-2.5-flash": 240
-};
-
-
 export async function handleRequest(request, env) {
     const url = new URL(request.url);
     const pathname = url.pathname;
     const search = url.search;
 
-    const proxyConfig = env.GEMINI_PROXY_CONFIG ? JSON.parse(env.GEMINI_PROXY_CONFIG) : {
-        rateLimits: DEFAULT_RATE_LIMITS,
-        dailyCallLimits: DEFAULT_DAILY_CALL_LIMITS
-    };
+    const proxyConfig = env.GEMINI_PROXY_CONFIG;
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
@@ -144,7 +130,15 @@ export async function handleRequest(request, env) {
             headers.set(key, value);
         }
     }
-    console.log(request.body);
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+        const clonedRequest = request.clone();
+        try {
+            const bodyText = await clonedRequest.text();
+            console.log("请求内容:", bodyText);
+        } catch (e) {
+            console.error("无法读取请求内容:", e);
+        }
+    }
     try {
         const response = await fetch(targetUrl, {
             method: request.method,
