@@ -58,7 +58,7 @@ export async function handleRequest(request, env) {
     }
     // 提取模型名
     const modelMatch = pathname.match(/models\/([^:]+)/);
-    const modelName = modelMatch ? modelMatch[1] : "unknown";
+    const modelName = modelMatch ? modelMatch[1] : "gemini-2.5-flash";
     const limitSeconds = rateLimits[modelName] || 30;
 
     // =====  配置的 GENIMI_KEY  =====
