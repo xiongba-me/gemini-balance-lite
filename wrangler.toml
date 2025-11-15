@@ -8,18 +8,7 @@ kv_namespaces = [
 ]
 
 [vars]
-GEMINI_PROXY_CONFIG = '''
-{
-    "rateLimits": {
-        "gemini-2.5-pro": 60,
-        "gemini-2.5-flash": 10
-    },
-    "dailyCallLimits": {
-        "gemini-2.5-pro": 45,
-        "gemini-2.5-flash": 240
-    }
-}
-'''
+GEMINI_PROXY_CONFIG = '{"rateLimits": {"gemini-2.5-pro": 60,"gemini-2.5-flash": 10},"dailyCallLimits": {"gemini-2.5-pro": 45,"gemini-2.5-flash": 240}}'
 
 [observability]
 [observability.logs]
