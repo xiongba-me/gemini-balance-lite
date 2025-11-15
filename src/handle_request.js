@@ -7,7 +7,7 @@ export async function handleRequest(request, env) {
     const pathname = url.pathname;
     const search = url.search;
 
-    const proxyConfig = env.GEMINI_PROXY_CONFIG;
+    const proxyConfig = JSON.parse(env.GEMINI_PROXY_CONFIG);
     const rateLimits = proxyConfig.rateLimits;
     const dailyCallLimits = proxyConfig.dailyCallLimits;
 
